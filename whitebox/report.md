@@ -243,3 +243,19 @@ Use one commit after each lint-fix pass with message format:
 - Remaining failing groups:
 	- Error 3, Error 6, Error 7, Error 8.
 
+### Error Batch 3 (Error 6 + Error 7/8)
+- Changes applied:
+	- Fixed `Player.move()` to award Go salary when a move wraps around the board (passing Go), not only when landing exactly on tile 0.
+	- Fixed `PropertyGroup.all_owned_by()` to require full ownership of all group properties (`all(...)`), preventing false monopoly detection.
+	- As a result, incorrect rent doubling on partial ownership was also resolved.
+- Verification command:
+
+```bash
+/home/arnav-agnihotri/miniconda3/envs/autograder/bin/python -m pytest whitebox/tests -q
+```
+
+- Result after batch 3: `185 passed`, `1 failed`.
+- Remaining failing group:
+	- Error 3 only (`test_play_turn_three_doubles_sends_player_to_jail`).
+	- Note: this remaining failure comes from test setup mocking (`roll`) that does not update dice streak state; the gameplay rule itself depends on `Dice.roll()` maintaining `doubles_streak`.
+
