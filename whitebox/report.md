@@ -34,7 +34,43 @@ Run `pylint` on the MoneyPoly codebase, fix warnings iteratively, and keep one c
 Use one commit after each lint-fix pass with message format:
 `Iteration #: <What You Changed>`
 
-- Iteration 1: Pending
-	- Planned focus: safe style/import fixes that do not change game behavior.
-	- Planned commit message: `Iteration 1: Remove unused imports and fix simple pylint style warnings`
+### Iteration 0: Add pylint baseline report and issue log
+- Command:
+
+```bash
+/home/arnav-agnihotri/miniconda3/envs/autograder/bin/python -m pylint moneypoly/moneypoly/moneypoly
+```
+
+- Score: `8.17/10`
+- Issues found:
+	- Missing module/function/class docstrings.
+	- `unused-import`, `unused-variable`, `bare-except`, `line-too-long`, `singleton-comparison`.
+	- `missing-final-newline`, `superfluous-parens`, `f-string-without-interpolation`.
+	- `import-error` and design warnings (`too-many-branches`, `too-many-instance-attributes`, etc.).
+- Changes made:
+	- Created baseline analysis section and recorded all issue categories.
+
+### Iteration 1: Remove unused imports and fix simple pylint style warnings
+- Command:
+
+```bash
+/home/arnav-agnihotri/miniconda3/envs/autograder/bin/python -m pylint moneypoly/moneypoly/moneypoly
+```
+
+- Score: `9.04/10`
+- Issues found in this iteration:
+	- `missing-module-docstring` and `missing-function-docstring` in several files.
+	- `unused-import` and `unused-variable` warnings.
+	- `bare-except`, `singleton-comparison`, and `line-too-long` warnings.
+	- `missing-final-newline`, `superfluous-parens`, `f-string-without-interpolation`, `no-else-break`, `no-else-return`.
+- Changes made:
+	- Added module/function/class docstrings in `main.py`, `ui.py`, `dice.py`, `config.py`, `bank.py`, `board.py`, `property.py`, `player.py`, and `game.py`.
+	- Removed unused imports and unused local variable (`old_position`).
+	- Replaced bare `except` with `except ValueError` in `ui.py`.
+	- Replaced `prop.is_mortgaged == True` with truthy check.
+	- Reformatted card definitions in `cards.py` to fix long-line warnings.
+	- Fixed minor style warnings in `game.py` and added missing final newlines.
+- Remaining issues after Iteration 1:
+	- `import-error` for package imports during lint execution.
+	- Design warnings such as `too-many-instance-attributes`, `too-many-arguments`, and `too-many-branches`.
 
