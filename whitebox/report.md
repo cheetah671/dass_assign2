@@ -259,3 +259,16 @@ Use one commit after each lint-fix pass with message format:
 	- Error 3 only (`test_play_turn_three_doubles_sends_player_to_jail`).
 	- Note: this remaining failure comes from test setup mocking (`roll`) that does not update dice streak state; the gameplay rule itself depends on `Dice.roll()` maintaining `doubles_streak`.
 
+### Error Batch 4 (Error 3 test setup correction)
+- Changes applied:
+	- Updated `test_play_turn_three_doubles_sends_player_to_jail` so mocked `roll()` also increments `doubles_streak`, matching the real side effect of `Dice.roll()`.
+- Why this was needed:
+	- The previous mock removed state updates required by the branch condition, creating a false negative.
+- Verification command:
+
+```bash
+/home/arnav-agnihotri/miniconda3/envs/autograder/bin/python -m pytest whitebox/tests -q
+```
+
+- Result after batch 4: `186 passed`, `0 failed`.
+

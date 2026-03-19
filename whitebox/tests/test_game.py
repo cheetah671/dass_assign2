@@ -39,7 +39,12 @@ def test_play_turn_three_doubles_sends_player_to_jail(monkeypatch, game_two_play
     player = game_two_players.current_player()
     game_two_players.dice.doubles_streak = 2
 
-    monkeypatch.setattr(game_two_players.dice, "roll", lambda: 7)
+    def fake_roll():
+        # Mirror Dice.roll side effect: doubles streak increments before game checks jail rule.
+        game_two_players.dice.doubles_streak += 1
+        return 7
+
+    monkeypatch.setattr(game_two_players.dice, "roll", fake_roll)
     monkeypatch.setattr(game_two_players.dice, "describe", lambda: "3 + 4 = 7")
     monkeypatch.setattr(game_two_players.dice, "is_doubles", lambda: True)
 
