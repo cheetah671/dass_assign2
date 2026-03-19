@@ -74,3 +74,23 @@ Use one commit after each lint-fix pass with message format:
 	- `import-error` for package imports during lint execution.
 	- Design warnings such as `too-many-instance-attributes`, `too-many-arguments`, and `too-many-branches`.
 
+### Iteration 2: Resolve package import errors and stabilize module imports
+- Command:
+
+```bash
+/home/arnav-agnihotri/miniconda3/envs/autograder/bin/python -m pylint moneypoly/moneypoly/moneypoly
+```
+
+- Score: `9.91/10`
+- Issues found in this iteration:
+	- `import-error` in `board.py`, `bank.py`, `player.py`, and `game.py` due to package resolution during lint.
+	- Remaining design warnings: `too-many-instance-attributes`, `too-many-arguments`, `too-many-positional-arguments`, `too-many-branches`.
+- Changes made:
+	- Converted internal imports from absolute package paths to relative imports in `board.py`, `bank.py`, `player.py`, and `game.py`.
+	- Added package initializer `moneypoly/moneypoly/moneypoly/__init__.py`.
+	- Re-ran pylint with the same command used in baseline for fair comparison.
+- Remaining issues after Iteration 2:
+	- `too-many-instance-attributes` in `property.py`, `player.py`, and `game.py`.
+	- `too-many-arguments` and `too-many-positional-arguments` in `Property.__init__`.
+	- `too-many-branches` in `Game._move_and_resolve`.
+

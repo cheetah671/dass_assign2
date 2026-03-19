@@ -1,7 +1,7 @@
 """Board layout and tile classification for MoneyPoly."""
 
-from moneypoly.property import Property, PropertyGroup
-from moneypoly.config import (
+from .property import Property, PropertyGroup
+from .config import (
     JAIL_POSITION,
     GO_TO_JAIL_POSITION,
     FREE_PARKING_POSITION,

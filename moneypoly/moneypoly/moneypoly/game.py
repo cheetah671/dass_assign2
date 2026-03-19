@@ -1,6 +1,6 @@
 """Core game loop and gameplay actions for MoneyPoly."""
 
-from moneypoly.config import (
+from .config import (
     JAIL_FINE,
     AUCTION_MIN_INCREMENT,
     INCOME_TAX_AMOUNT,
@@ -8,12 +8,12 @@ from moneypoly.config import (
     MAX_TURNS,
     GO_SALARY,
 )
-from moneypoly.player import Player
-from moneypoly.board import Board
-from moneypoly.bank import Bank
-from moneypoly.dice import Dice
-from moneypoly.cards import CardDeck, CHANCE_CARDS, COMMUNITY_CHEST_CARDS
-from moneypoly import ui
+from .player import Player
+from .board import Board
+from .bank import Bank
+from .dice import Dice
+from .cards import CardDeck, CHANCE_CARDS, COMMUNITY_CHEST_CARDS
+from . import ui
 
 
 class Game:
