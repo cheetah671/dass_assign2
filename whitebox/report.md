@@ -215,7 +215,7 @@ Use one commit after each lint-fix pass with message format:
 
 ## Error Fix Progress
 
-### Error Batch 1 (Error 1 + Error 2)
+### Error Batch 1 
 - Changes applied:
 	- Fixed `Bank.collect()` to ignore negative amounts.
 	- Fixed `CardDeck.cards_remaining()` to return `0` for empty decks.
@@ -226,10 +226,9 @@ Use one commit after each lint-fix pass with message format:
 ```
 
 - Result after batch 1: `180 passed`, `6 failed`.
-- Remaining failing groups:
-	- Error 3, Error 4, Error 5, Error 6, Error 7, Error 8.
 
-### Error Batch 2 (Error 4 + Error 5)
+
+### Error Batch 2 
 - Changes applied:
 	- Fixed affordability boundary in `Game.buy_property()` so `balance == price` is allowed.
 	- Fixed winner selection in `Game.find_winner()` to return the player with maximum net worth.
@@ -240,10 +239,8 @@ Use one commit after each lint-fix pass with message format:
 ```
 
 - Result after batch 2: `182 passed`, `4 failed`.
-- Remaining failing groups:
-	- Error 3, Error 6, Error 7, Error 8.
 
-### Error Batch 3 (Error 6 + Error 7/8)
+### Error Batch 3 
 - Changes applied:
 	- Fixed `Player.move()` to award Go salary when a move wraps around the board (passing Go), not only when landing exactly on tile 0.
 	- Fixed `PropertyGroup.all_owned_by()` to require full ownership of all group properties (`all(...)`), preventing false monopoly detection.
@@ -255,11 +252,8 @@ Use one commit after each lint-fix pass with message format:
 ```
 
 - Result after batch 3: `185 passed`, `1 failed`.
-- Remaining failing group:
-	- Error 3 only (`test_play_turn_three_doubles_sends_player_to_jail`).
-	- Note: this remaining failure comes from test setup mocking (`roll`) that does not update dice streak state; the gameplay rule itself depends on `Dice.roll()` maintaining `doubles_streak`.
 
-### Error Batch 4 (Error 3 test setup correction)
+### Error Batch 4 
 - Changes applied:
 	- Updated `test_play_turn_three_doubles_sends_player_to_jail` so mocked `roll()` also increments `doubles_streak`, matching the real side effect of `Dice.roll()`.
 - Why this was needed:
