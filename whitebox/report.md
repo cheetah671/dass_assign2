@@ -229,3 +229,17 @@ Use one commit after each lint-fix pass with message format:
 - Remaining failing groups:
 	- Error 3, Error 4, Error 5, Error 6, Error 7, Error 8.
 
+### Error Batch 2 (Error 4 + Error 5)
+- Changes applied:
+	- Fixed affordability boundary in `Game.buy_property()` so `balance == price` is allowed.
+	- Fixed winner selection in `Game.find_winner()` to return the player with maximum net worth.
+- Verification command:
+
+```bash
+/home/arnav-agnihotri/miniconda3/envs/autograder/bin/python -m pytest whitebox/tests -q
+```
+
+- Result after batch 2: `182 passed`, `4 failed`.
+- Remaining failing groups:
+	- Error 3, Error 6, Error 7, Error 8.
+
