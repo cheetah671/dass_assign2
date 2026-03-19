@@ -94,3 +94,24 @@ Use one commit after each lint-fix pass with message format:
 	- `too-many-arguments` and `too-many-positional-arguments` in `Property.__init__`.
 	- `too-many-branches` in `Game._move_and_resolve`.
 
+### Iteration 3: Refactor class state and card/tile handlers to clear design warnings
+- Command:
+
+```bash
+/home/arnav-agnihotri/miniconda3/envs/autograder/bin/python -m pylint moneypoly/moneypoly/moneypoly
+```
+
+- Score: `10.00/10`
+- Issues found in this iteration:
+	- `too-many-instance-attributes` in `Property`, `Player`, and `Game`.
+	- `too-many-arguments` and `too-many-positional-arguments` in `Property.__init__`.
+	- `too-many-branches` in card/tile resolution paths.
+- Changes made:
+	- Refactored `Property` constructor to remove group argument and moved group wiring to `Board._create_properties`.
+	- Converted `mortgage_value` to a computed property and removed unused `houses` field.
+	- Removed unused `is_eliminated` player state.
+	- Consolidated game decks into one dictionary (`self.decks`) and removed redundant `self.running` attribute.
+	- Split tile and card resolution logic into dispatch handlers (`_handle_*` and `_card_*` methods) to reduce branch complexity.
+- Remaining issues after Iteration 3:
+	- None for the configured pylint checks; score reached `10.00/10`.
+
