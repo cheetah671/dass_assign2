@@ -576,9 +576,38 @@ python -m pytest tests -q
 - Buyer cash is deducted and ownership changes, but seller is not credited.
 
 
-### Next Planned Fix Workflow
+### Extreme Expansion Verification (Latest)
 
-- Documented first (this section).
-- Next: fix each defect one-by-one.
-- Re-run tests after each fix.
-- Commit each fix separately as requested.
+- Verification command:
+
+```bash
+cd whitebox
+python -m pytest tests -q
+```
+
+- Result: `250 total` (`248 passed`, `2 failed`).
+
+
+#### Error 14: Mortgage payout does not reduce bank reserves
+
+- Failing test:
+- `whitebox/tests/test_extreme_cases.py::test_extreme_mortgage_reduces_bank_funds_by_payout`
+
+- Why this test is needed:
+- Mortgaging is a bank-to-player transfer and must reduce bank funds by the exact payout amount.
+
+- Issue observed:
+- `Game.mortgage_property()` succeeds and credits the player, but bank balance does not decrease.
+
+
+#### Error 15: Trade with negative cash is not cleanly rejected
+
+- Failing test:
+- `whitebox/tests/test_extreme_cases.py::test_extreme_trade_negative_cash_rejected_without_state_change`
+
+- Why this test is needed:
+- Invalid trade inputs should be rejected deterministically without partial state mutation or uncaught internal exceptions.
+
+- Issue observed:
+- Negative `cash_amount` path flows into `deduct_money(-50)` and raises `ValueError` instead of returning a clean rejection result.
+
