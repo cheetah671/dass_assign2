@@ -483,6 +483,7 @@ Use one commit after each lint-fix pass with message format:
 
 
 - Result after batch 4: `186 passed`, `0 failed`. 
+basically there were 10 errors in this but while i was fixing one error others also got fixed so that is why till i ahev commmitted only 4 errors 
 
 
 ## 1.3 Additional Coverage Expansion (Unit + Integration)
@@ -611,3 +612,4 @@ python -m pytest tests -q
 - Issue observed:
 - Negative `cash_amount` path flows into `deduct_money(-50)` and raises `ValueError` instead of returning a clean rejection result.
 
+After this i added more testcases so total 272 test cases with coverage 100 percent and all are passing.
