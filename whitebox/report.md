@@ -613,3 +613,38 @@ python -m pytest tests -q
 - Negative `cash_amount` path flows into `deduct_money(-50)` and raises `ValueError` instead of returning a clean rejection result.
 
 After this i added more testcases so total 272 test cases with coverage 100 percent and all are passing.
+
+
+## 1.3 Newly Documented Failure (Before Fix)
+
+### Current Reproduction Run
+
+- Command used:
+
+```bash
+PYTHONPATH=/home/arnav-agnihotri/Downloads/dass_assign2/dass_assign2/whitebox pytest /home/arnav-agnihotri/Downloads/dass_assign2/dass_assign2/whitebox/tests -q
+```
+
+- Result: `284 total` (`283 passed`, `1 failed`).
+
+
+### Error 16: Unmortgage attempt mutates property state even when player cannot afford payment
+
+- Failing test:
+- `whitebox/tests/test_remaining_decision_paths.py::test_unmortgage_fails_when_insufficient_balance_keeps_mortgaged`
+
+- Why this test is needed:
+- Failed financial actions should not mutate ownership/mortgage state. If a player cannot pay unmortgage cost, the property must remain mortgaged.
+
+- Issue observed:
+- `Game.unmortgage_property()` calls `prop.unmortgage()` before checking player affordability.
+- `prop.unmortgage()` flips `prop.is_mortgaged` to `False` and returns cost.
+- If player balance is below cost, method returns `False` after affordability check, but mortgage flag has already been cleared.
+
+- Expected behavior:
+- On insufficient funds, method should return `False` and leave `prop.is_mortgaged` unchanged (`True`).
+
+- Actual behavior:
+- Method returns `False`, prints affordability error, but `prop.is_mortgaged` becomes `False`.
+
+

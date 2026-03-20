@@ -3,6 +3,7 @@
 from moneypoly.moneypoly.moneypoly.game import Game
 from moneypoly.moneypoly.moneypoly.player import Player
 from moneypoly.moneypoly.moneypoly.property import Property, PropertyGroup
+from moneypoly.moneypoly.moneypoly.config import JAIL_FINE
 from moneypoly.moneypoly.moneypoly import ui
 
 
@@ -356,3 +357,168 @@ def test_ui_helpers_cover_print_and_input_branches(monkeypatch, capsys):
     out = capsys.readouterr().out
     assert "Player" in out
     assert "Property Register" in out
+
+
+def test_trade_fails_when_seller_does_not_own_property_and_state_unchanged():
+    game = Game(["Alice", "Bob"])
+    seller, buyer = game.players
+    prop = game.board.get_property_at(1)
+    assert prop is not None
+
+    seller_before = seller.balance
+    buyer_before = buyer.balance
+    result = game.trade(seller, buyer, prop, 100)
+
+    assert result is False
+    assert prop.owner is None
+    assert seller.balance == seller_before
+    assert buyer.balance == buyer_before
+
+
+def test_auction_all_players_pass_leaves_property_unowned(monkeypatch):
+    game = Game(["Alice", "Bob", "Cara"])
+    prop = game.board.get_property_at(1)
+    assert prop is not None
+
+    monkeypatch.setattr("moneypoly.moneypoly.moneypoly.ui.safe_int_input", lambda *_a, **_k: 0)
+    game.auction_property(prop)
+
+    assert prop.owner is None
+
+
+def test_auction_rejects_bid_above_balance_and_accepts_valid_bid(monkeypatch):
+    game = Game(["Alice", "Bob"])
+    prop = game.board.get_property_at(1)
+    assert prop is not None
+
+    # Alice overbids and should be rejected; Bob bids valid 100 and wins.
+    bids = iter([5000, 100])
+    monkeypatch.setattr("moneypoly.moneypoly.moneypoly.ui.safe_int_input", lambda *_a, **_k: next(bids))
+    game.auction_property(prop)
+
+    assert prop.owner is game.players[1]
+
+
+def test_jail_turn_third_strike_forces_fine_and_release(monkeypatch):
+    game = Game(["Alice", "Bob"])
+    player = game.players[0]
+    player.in_jail = True
+    player.jail_turns = 2
+    before_balance = player.balance
+
+    monkeypatch.setattr("moneypoly.moneypoly.moneypoly.ui.confirm", lambda _q: False)
+    monkeypatch.setattr(game.dice, "roll", lambda: 3)
+    monkeypatch.setattr(game.dice, "describe", lambda: "1 + 2 = 3")
+    monkeypatch.setattr(game, "_move_and_resolve", lambda *_a, **_k: None)
+
+    game._handle_jail_turn(player)
+
+    assert player.in_jail is False
+    assert player.jail_turns == 0
+    assert player.balance == before_balance - JAIL_FINE
+
+
+def test_card_collect_from_others_ignores_underfunded_players():
+    game = Game(["Alice", "Bob", "Cara"])
+    collector, donor_ok, donor_low = game.players
+    donor_ok.balance = 40
+    donor_low.balance = 10
+    before = collector.balance
+
+    game._card_collect_from_others(collector, 25)
+
+    assert collector.balance == before + 25
+    assert donor_ok.balance == 15
+    assert donor_low.balance == 10
+
+
+def test_check_bankruptcy_clears_owner_and_unmortgages_properties():
+    game = Game(["Alice", "Bob"])
+    player = game.players[0]
+    prop = game.board.get_property_at(1)
+    assert prop is not None
+
+    assert game.buy_property(player, prop) is True
+    assert game.mortgage_property(player, prop) is True
+    player.balance = 0
+
+    game._check_bankruptcy(player)
+
+    assert player not in game.players
+    assert prop.owner is None
+    assert prop.is_mortgaged is False
+
+
+def test_find_winner_returns_none_when_players_removed():
+    game = Game(["Alice", "Bob"])
+    game.players.clear()
+    assert game.find_winner() is None
+
+
+def test_buy_property_fails_when_insufficient_balance_no_side_effects():
+    game = Game(["Alice", "Bob"])
+    player = game.players[0]
+    prop = game.board.get_property_at(39)
+    assert prop is not None
+
+    player.balance = prop.price - 1
+    bank_before = game.bank.get_balance()
+
+    assert game.buy_property(player, prop) is False
+    assert prop.owner is None
+    assert prop not in player.properties
+    assert game.bank.get_balance() == bank_before
+
+
+def test_unmortgage_fails_when_insufficient_balance_keeps_mortgaged():
+    game = Game(["Alice", "Bob"])
+    player = game.players[0]
+    prop = game.board.get_property_at(1)
+    assert prop is not None
+
+    assert game.buy_property(player, prop) is True
+    assert game.mortgage_property(player, prop) is True
+    player.balance = 0
+
+    assert game.unmortgage_property(player, prop) is False
+    assert prop.is_mortgaged is True
+
+
+def test_card_move_to_non_property_tile_does_not_call_property_handler(monkeypatch):
+    game = Game(["Alice", "Bob"])
+    player = game.players[0]
+
+    monkeypatch.setattr(game.board, "get_tile_type", lambda _pos: "income_tax")
+    called = {"property": 0}
+    monkeypatch.setattr(game, "_handle_property_tile", lambda *_a, **_k: called.__setitem__("property", called["property"] + 1))
+
+    game._card_move_to(player, 4)
+    assert called["property"] == 0
+
+
+def test_menu_trade_invalid_partner_selection_returns_without_trade(monkeypatch):
+    game = Game(["Alice", "Bob"])
+    seller = game.players[0]
+    prop = game.board.get_property_at(1)
+    assert prop is not None
+    assert game.buy_property(seller, prop) is True
+
+    monkeypatch.setattr("moneypoly.moneypoly.moneypoly.ui.safe_int_input", lambda *_a, **_k: 0)
+    called = {"trade": 0}
+    monkeypatch.setattr(game, "trade", lambda *_a, **_k: called.__setitem__("trade", called["trade"] + 1))
+
+    game._menu_trade(seller)
+    assert called["trade"] == 0
+
+
+def test_interactive_menu_loan_zero_and_negative_do_not_issue(monkeypatch):
+    game = Game(["Alice", "Bob"])
+    player = game.players[0]
+    choices = iter([6, 0, 6, -10, 0])
+
+    monkeypatch.setattr("moneypoly.moneypoly.moneypoly.ui.safe_int_input", lambda *_a, **_k: next(choices))
+    called = {"loan": 0}
+    monkeypatch.setattr(game.bank, "give_loan", lambda *_a, **_k: called.__setitem__("loan", called["loan"] + 1))
+
+    game.interactive_menu(player)
+    assert called["loan"] == 0
