@@ -1,5 +1,7 @@
 """Black-box API tests for QuickCart using only documented behavior."""
 
+import uuid
+
 import pytest
 
 from conftest import pick_id, request_api, unwrap_dict, unwrap_list
@@ -486,3 +488,378 @@ def test_coupon_apply_missing_or_wrong_type_returns_400(api_session, base_url, u
 def test_support_ticket_wrong_types_return_400(api_session, base_url, user_headers, payload):
     resp = request_api(api_session, base_url, "POST", "/support/ticket", headers=user_headers, json=payload)
     assert resp.status_code == 400
+
+
+# -----------------------------
+# Additional expansion: TC-101+
+# -----------------------------
+
+
+def test_profile_update_missing_body_returns_400(api_session, base_url, user_headers):
+    resp = request_api(api_session, base_url, "PUT", "/profile", headers=user_headers, json={})
+    assert resp.status_code == 400
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"name": 12345, "phone": "9999999999"},
+        {"name": "Valid Name", "phone": 9999999999},
+    ],
+)
+def test_profile_update_wrong_types_return_400(api_session, base_url, user_headers, payload):
+    resp = request_api(api_session, base_url, "PUT", "/profile", headers=user_headers, json=payload)
+    assert resp.status_code == 400
+
+
+def test_profile_update_valid_min_boundary_returns_200(api_session, base_url, user_headers):
+    payload = {"name": "AB", "phone": "9876543210"}
+    resp = request_api(api_session, base_url, "PUT", "/profile", headers=user_headers, json=payload)
+    assert resp.status_code == 200
+    assert isinstance(resp.json(), (dict, list))
+
+
+def test_wallet_add_valid_min_boundary_returns_200(api_session, base_url, user_headers):
+    resp = request_api(api_session, base_url, "POST", "/wallet/add", headers=user_headers, json={"amount": 1})
+    assert resp.status_code == 200
+    assert isinstance(resp.json(), (dict, list))
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"label": "HOME", "street": "12345 Main Street", "city": "Hyderabad", "pincode": "ABCDE1", "is_default": False},
+        {"label": "HOME", "street": "12345 Main Street", "city": "Hyderabad", "pincode": "500001", "is_default": 1},
+    ],
+)
+def test_create_address_additional_invalid_types_and_values(api_session, base_url, user_headers, payload):
+    resp = request_api(api_session, base_url, "POST", "/addresses", headers=user_headers, json=payload)
+    assert resp.status_code == 400
+
+
+def test_cart_update_missing_quantity_returns_400(api_session, base_url, user_headers, clear_cart):
+    payload = {"product_id": 1}
+    resp = request_api(api_session, base_url, "POST", "/cart/update", headers=user_headers, json=payload)
+    assert resp.status_code == 400
+
+
+def test_cart_remove_missing_product_id_returns_400(api_session, base_url, user_headers, clear_cart):
+    resp = request_api(api_session, base_url, "POST", "/cart/remove", headers=user_headers, json={})
+    assert resp.status_code == 400
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {},
+        {"payment_method": 1},
+    ],
+)
+def test_checkout_missing_or_wrong_payment_method_returns_400(api_session, base_url, user_headers, payload, clear_cart):
+    resp = request_api(api_session, base_url, "POST", "/checkout", headers=user_headers, json=payload)
+    assert resp.status_code == 400
+
+
+@pytest.mark.parametrize(
+    "endpoint, payload",
+    [
+        ("/wallet/add", {"amount": "100"}),
+        ("/wallet/pay", {}),
+        ("/wallet/pay", {"amount": "100"}),
+    ],
+)
+def test_wallet_wrong_or_missing_amount_returns_400(api_session, base_url, user_headers, endpoint, payload):
+    resp = request_api(api_session, base_url, "POST", endpoint, headers=user_headers, json=payload)
+    assert resp.status_code == 400
+
+
+def test_loyalty_redeem_wrong_type_returns_400(api_session, base_url, user_headers):
+    resp = request_api(api_session, base_url, "POST", "/loyalty/redeem", headers=user_headers, json={"points": "10"})
+    assert resp.status_code == 400
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"comment": "good"},
+        {"rating": "5", "comment": "good"},
+    ],
+)
+def test_review_missing_or_wrong_rating_returns_400(api_session, base_url, user_headers, product_id, payload):
+    resp = request_api(api_session, base_url, "POST", f"/products/{product_id}/reviews", headers=user_headers, json=payload)
+    assert resp.status_code == 400
+
+
+def test_review_missing_comment_returns_400(api_session, base_url, user_headers, product_id):
+    resp = request_api(api_session, base_url, "POST", f"/products/{product_id}/reviews", headers=user_headers, json={"rating": 5})
+    assert resp.status_code == 400
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"message": "Need help with order"},
+        {"subject": "Need help"},
+    ],
+)
+def test_support_ticket_missing_fields_returns_400(api_session, base_url, user_headers, payload):
+    resp = request_api(api_session, base_url, "POST", "/support/ticket", headers=user_headers, json=payload)
+    assert resp.status_code == 400
+
+
+# -----------------------------
+# Further expansion: TC-121+
+# -----------------------------
+
+
+def _create_address_and_get_id(api_session, base_url, user_headers):
+    """Create an address and resolve its ID using response or list diff."""
+    before_resp = request_api(api_session, base_url, "GET", "/addresses", headers=user_headers)
+    assert before_resp.status_code == 200
+    before = unwrap_list(before_resp.json())
+    before_ids = {
+        pick_id(a)
+        for a in before
+        if isinstance(a, dict) and pick_id(a) is not None
+    }
+
+    payload = {
+        "label": "OTHER",
+        "street": "221B Baker Street",
+        "city": "Hyderabad",
+        "pincode": "500001",
+        "is_default": False,
+    }
+    create_resp = request_api(api_session, base_url, "POST", "/addresses", headers=user_headers, json=payload)
+    assert create_resp.status_code in (200, 201)
+
+    created = unwrap_dict(create_resp.json())
+    aid = pick_id(created)
+    if aid is not None:
+        return aid
+
+    after_resp = request_api(api_session, base_url, "GET", "/addresses", headers=user_headers)
+    assert after_resp.status_code == 200
+    after = unwrap_list(after_resp.json())
+
+    for addr in after:
+        if not isinstance(addr, dict):
+            continue
+        candidate_id = pick_id(addr)
+        if candidate_id in before_ids:
+            continue
+        if addr.get("street") == payload["street"] and addr.get("city") == payload["city"]:
+            return candidate_id
+
+    pytest.skip("Could not resolve newly created address id")
+
+
+def _create_ticket_and_get_id(api_session, base_url, user_headers):
+    """Create a support ticket and resolve its ticket ID robustly."""
+    subject = f"Ticket-{uuid.uuid4().hex[:10]}"
+    payload = {"subject": subject, "message": "Need help with checkout issue"}
+    create_resp = request_api(api_session, base_url, "POST", "/support/ticket", headers=user_headers, json=payload)
+    assert create_resp.status_code in (200, 201)
+
+    created = unwrap_dict(create_resp.json())
+    tid = pick_id(created)
+    if tid is not None:
+        return tid
+
+    list_resp = request_api(api_session, base_url, "GET", "/support/tickets", headers=user_headers)
+    assert list_resp.status_code == 200
+    tickets = unwrap_list(list_resp.json())
+    for t in reversed(tickets):
+        if isinstance(t, dict) and t.get("subject") == subject:
+            tid = pick_id(t)
+            if tid is not None:
+                return tid
+
+    pytest.skip("Could not resolve newly created ticket id")
+
+
+def test_profile_update_missing_name_returns_400(api_session, base_url, user_headers):
+    payload = {"phone": "9999999999"}
+    resp = request_api(api_session, base_url, "PUT", "/profile", headers=user_headers, json=payload)
+    assert resp.status_code == 400
+
+
+def test_profile_update_missing_phone_returns_400(api_session, base_url, user_headers):
+    payload = {"name": "Valid Name"}
+    resp = request_api(api_session, base_url, "PUT", "/profile", headers=user_headers, json=payload)
+    assert resp.status_code == 400
+
+
+def test_update_nonexistent_address_returns_404(api_session, base_url, user_headers):
+    payload = {"street": "Updated Street Name", "is_default": False}
+    resp = request_api(api_session, base_url, "PUT", "/addresses/99999999", headers=user_headers, json=payload)
+    assert resp.status_code == 404
+
+
+def test_update_address_valid_street_and_default(api_session, base_url, user_headers):
+    aid = _create_address_and_get_id(api_session, base_url, user_headers)
+    payload = {"street": "New Street 45", "is_default": True}
+
+    update_resp = request_api(api_session, base_url, "PUT", f"/addresses/{aid}", headers=user_headers, json=payload)
+    assert update_resp.status_code == 200
+    assert isinstance(update_resp.json(), (dict, list))
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"label": "OFFICE", "street": "Updated Street", "is_default": False},
+        {"city": "Mumbai", "street": "Updated Street", "is_default": False},
+        {"pincode": "400001", "street": "Updated Street", "is_default": False},
+    ],
+)
+def test_update_address_restricted_fields_rejected(api_session, base_url, user_headers, payload):
+    aid = _create_address_and_get_id(api_session, base_url, user_headers)
+    resp = request_api(api_session, base_url, "PUT", f"/addresses/{aid}", headers=user_headers, json=payload)
+    assert resp.status_code == 400
+
+
+def test_update_address_invalid_street_too_short(api_session, base_url, user_headers):
+    aid = _create_address_and_get_id(api_session, base_url, user_headers)
+    payload = {"street": "1234", "is_default": False}
+    resp = request_api(api_session, base_url, "PUT", f"/addresses/{aid}", headers=user_headers, json=payload)
+    assert resp.status_code == 400
+
+
+def test_cart_totals_match_item_subtotals(api_session, base_url, user_headers, product_id, clear_cart):
+    add_resp = request_api(
+        api_session,
+        base_url,
+        "POST",
+        "/cart/add",
+        headers=user_headers,
+        json={"product_id": product_id, "quantity": 2},
+    )
+    assert add_resp.status_code in (200, 201)
+
+    cart_resp = request_api(api_session, base_url, "GET", "/cart", headers=user_headers)
+    assert cart_resp.status_code == 200
+    body = cart_resp.json()
+    items = unwrap_list(body)
+
+    if not items and isinstance(body, dict):
+        items = body.get("items", []) if isinstance(body.get("items"), list) else []
+
+    computed_total = 0
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        quantity = item.get("quantity")
+        price = item.get("price") or item.get("unit_price")
+        subtotal = item.get("subtotal")
+        if isinstance(quantity, (int, float)) and isinstance(price, (int, float)) and isinstance(subtotal, (int, float)):
+            assert subtotal == quantity * price
+            computed_total += subtotal
+
+    if isinstance(body, dict) and isinstance(body.get("total"), (int, float)) and computed_total:
+        assert body["total"] == computed_total
+
+
+def test_cart_update_nonexistent_product_returns_404(api_session, base_url, user_headers, clear_cart):
+    payload = {"product_id": 99999999, "quantity": 2}
+    resp = request_api(api_session, base_url, "POST", "/cart/update", headers=user_headers, json=payload)
+    assert resp.status_code == 404
+
+
+def test_wallet_add_upper_boundary_valid(api_session, base_url, user_headers):
+    resp = request_api(api_session, base_url, "POST", "/wallet/add", headers=user_headers, json={"amount": 100000})
+    assert resp.status_code == 200
+    assert isinstance(resp.json(), (dict, list))
+
+
+def test_wallet_pay_zero_amount_returns_400(api_session, base_url, user_headers):
+    resp = request_api(api_session, base_url, "POST", "/wallet/pay", headers=user_headers, json={"amount": 0})
+    assert resp.status_code == 400
+
+
+def test_loyalty_redeem_more_than_available_points_returns_400(api_session, base_url, user_headers):
+    loyalty_resp = request_api(api_session, base_url, "GET", "/loyalty", headers=user_headers)
+    assert loyalty_resp.status_code == 200
+    loyalty = unwrap_dict(loyalty_resp.json())
+
+    points = loyalty.get("points", 0)
+    if not isinstance(points, int):
+        points = 0
+
+    redeem_resp = request_api(
+        api_session,
+        base_url,
+        "POST",
+        "/loyalty/redeem",
+        headers=user_headers,
+        json={"points": points + 1},
+    )
+    assert redeem_resp.status_code == 400
+
+
+def test_get_nonexistent_order_returns_404(api_session, base_url, user_headers):
+    resp = request_api(api_session, base_url, "GET", "/orders/99999999", headers=user_headers)
+    assert resp.status_code == 404
+
+
+def test_get_nonexistent_order_invoice_returns_404(api_session, base_url, user_headers):
+    resp = request_api(api_session, base_url, "GET", "/orders/99999999/invoice", headers=user_headers)
+    assert resp.status_code == 404
+
+
+def test_coupon_apply_empty_code_returns_400(api_session, base_url, user_headers, clear_cart):
+    resp = request_api(api_session, base_url, "POST", "/coupon/apply", headers=user_headers, json={"code": ""})
+    assert resp.status_code == 400
+
+
+def test_get_product_reviews_endpoint_returns_200_and_json(api_session, base_url, user_headers, product_id):
+    resp = request_api(api_session, base_url, "GET", f"/products/{product_id}/reviews", headers=user_headers)
+    assert resp.status_code == 200
+    assert isinstance(resp.json(), (dict, list))
+
+
+def test_support_ticket_create_valid_returns_success(api_session, base_url, user_headers):
+    payload = {
+        "subject": f"Need help {uuid.uuid4().hex[:6]}",
+        "message": "Order stuck in processing",
+    }
+    resp = request_api(api_session, base_url, "POST", "/support/ticket", headers=user_headers, json=payload)
+    assert resp.status_code in (200, 201)
+    assert isinstance(resp.json(), (dict, list))
+
+
+def test_support_ticket_update_nonexistent_returns_404(api_session, base_url, user_headers):
+    payload = {"status": "IN_PROGRESS"}
+    resp = request_api(api_session, base_url, "PUT", "/support/tickets/99999999", headers=user_headers, json=payload)
+    assert resp.status_code == 404
+
+
+def test_support_ticket_invalid_status_transition_open_to_closed_rejected(api_session, base_url, user_headers):
+    tid = _create_ticket_and_get_id(api_session, base_url, user_headers)
+    payload = {"status": "CLOSED"}
+    resp = request_api(api_session, base_url, "PUT", f"/support/tickets/{tid}", headers=user_headers, json=payload)
+    assert resp.status_code == 400
+
+
+def test_support_ticket_valid_status_lifecycle(api_session, base_url, user_headers):
+    tid = _create_ticket_and_get_id(api_session, base_url, user_headers)
+
+    to_progress = request_api(
+        api_session,
+        base_url,
+        "PUT",
+        f"/support/tickets/{tid}",
+        headers=user_headers,
+        json={"status": "IN_PROGRESS"},
+    )
+    assert to_progress.status_code == 200
+
+    to_closed = request_api(
+        api_session,
+        base_url,
+        "PUT",
+        f"/support/tickets/{tid}",
+        headers=user_headers,
+        json={"status": "CLOSED"},
+    )
+    assert to_closed.status_code == 200

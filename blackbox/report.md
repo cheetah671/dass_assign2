@@ -14,14 +14,39 @@
 QC_BASE_URL=http://localhost:8080 QC_ROLL_NUMBER=1 python -m pytest blackbox/tests/test_quickcart_api.py -vv
 ```
 
-- Total test cases: `100`
-- Passed: `89`
-- Failed: `11`
+- Latest verification command:
+
+```bash
+QC_BASE_URL=http://localhost:8080 QC_ROLL_NUMBER=1 /home/arnav-agnihotri/miniconda3/envs/autograder/bin/python -m pytest blackbox/tests/test_quickcart_api.py -q
+```
+
+- Total test cases: `141`
+- Passed: `120`
+- Failed: `21`
 - Skipped: `0`
 
-## Complete Test Case Status (All 100, Category-Wise)
+## Category-Wise Distribution (Total = 141)
 
-### Header Validation
+| Category | Test Count |
+|---|---:|
+| Header Validation | 8 |
+| Admin Endpoints | 16 |
+| Profile | 15 |
+| Addresses | 27 |
+| Products | 9 |
+| Cart | 17 |
+| Coupons | 5 |
+| Checkout | 4 |
+| Wallet | 10 |
+| Loyalty | 5 |
+| Orders | 4 |
+| Reviews | 8 |
+| Support Tickets | 13 |
+| **Total** | **141** |
+
+## Complete Test Case Status (All 141, Category-Wise)
+
+### Header Validation (8)
 | TC | Pytest Test Case | Status |
 |---|---|---|
 | TC-001 | `test_missing_roll_number_header_returns_401` | PASS |
@@ -33,7 +58,7 @@ QC_BASE_URL=http://localhost:8080 QC_ROLL_NUMBER=1 python -m pytest blackbox/tes
 | TC-062 | `test_profile_header_edge_cases[headers2-expected_statuses2]` | PASS |
 | TC-063 | `test_profile_header_edge_cases[headers3-expected_statuses3]` | PASS |
 
-### Admin Endpoints
+### Admin Endpoints (16)
 | TC | Pytest Test Case | Status |
 |---|---|---|
 | TC-005 | `test_admin_endpoint_does_not_require_user_header` | PASS |
@@ -53,7 +78,7 @@ QC_BASE_URL=http://localhost:8080 QC_ROLL_NUMBER=1 python -m pytest blackbox/tes
 | TC-069 | `test_admin_list_endpoints_json_structure[/admin/tickets]` | PASS |
 | TC-070 | `test_admin_list_endpoints_json_structure[/admin/addresses]` | PASS |
 
-### Profile
+### Profile (15)
 | TC | Pytest Test Case | Status |
 |---|---|---|
 | TC-014 | `test_get_profile_returns_200_and_json` | PASS |
@@ -66,7 +91,15 @@ QC_BASE_URL=http://localhost:8080 QC_ROLL_NUMBER=1 python -m pytest blackbox/tes
 | TC-072 | `test_profile_update_valid_inputs[payload0]` | PASS |
 | TC-073 | `test_profile_update_valid_inputs[payload1]` | PASS |
 
-### Addresses
+Merged additional Profile cases:
+- `test_profile_update_missing_body_returns_400`
+- `test_profile_update_wrong_types_return_400[payload0]`
+- `test_profile_update_wrong_types_return_400[payload1]`
+- `test_profile_update_valid_min_boundary_returns_200`
+- `test_profile_update_missing_name_returns_400`
+- `test_profile_update_missing_phone_returns_400`
+
+### Addresses (27)
 | TC | Pytest Test Case | Status |
 |---|---|---|
 | TC-020 | `test_get_addresses_returns_200` | PASS |
@@ -89,7 +122,17 @@ QC_BASE_URL=http://localhost:8080 QC_ROLL_NUMBER=1 python -m pytest blackbox/tes
 | TC-084 | `test_create_address_wrong_types_returns_400[payload3]` | PASS |
 | TC-085 | `test_create_address_wrong_types_returns_400[payload4]` | PASS |
 
-### Products
+Merged additional Address cases:
+- `test_create_address_additional_invalid_types_and_values[payload0]` | FAIL
+- `test_create_address_additional_invalid_types_and_values[payload1]`
+- `test_update_nonexistent_address_returns_404`
+- `test_update_address_valid_street_and_default`
+- `test_update_address_restricted_fields_rejected[payload0]` | FAIL
+- `test_update_address_restricted_fields_rejected[payload1]` | FAIL
+- `test_update_address_restricted_fields_rejected[payload2]` | FAIL
+- `test_update_address_invalid_street_too_short` | FAIL
+
+### Products (9)
 | TC | Pytest Test Case | Status |
 |---|---|---|
 | TC-027 | `test_products_list_returns_only_active_products` | PASS |
@@ -102,7 +145,10 @@ QC_BASE_URL=http://localhost:8080 QC_ROLL_NUMBER=1 python -m pytest blackbox/tes
 | TC-088 | `test_products_query_boundaries_return_json[?sort=asc&search=phone]` | PASS |
 | TC-089 | `test_products_query_boundaries_return_json[?sort=desc&category=electronics]` | PASS |
 
-### Cart
+Merged additional Product/Review-list case:
+- `test_get_product_reviews_endpoint_returns_200_and_json`
+
+### Cart (17)
 | TC | Pytest Test Case | Status |
 |---|---|---|
 | TC-032 | `test_cart_add_invalid_quantity_returns_400[0]` | FAIL |
@@ -119,7 +165,13 @@ QC_BASE_URL=http://localhost:8080 QC_ROLL_NUMBER=1 python -m pytest blackbox/tes
 | TC-095 | `test_cart_update_missing_or_wrong_types_return_400[payload0]` | PASS |
 | TC-096 | `test_cart_update_missing_or_wrong_types_return_400[payload1]` | PASS |
 
-### Coupons
+Merged additional Cart cases:
+- `test_cart_update_missing_quantity_returns_400`
+- `test_cart_remove_missing_product_id_returns_400` | FAIL
+- `test_cart_totals_match_item_subtotals` | FAIL
+- `test_cart_update_nonexistent_product_returns_404` | FAIL
+
+### Coupons (5)
 | TC | Pytest Test Case | Status |
 |---|---|---|
 | TC-038 | `test_apply_coupon_missing_code_returns_400` | PASS |
@@ -127,13 +179,20 @@ QC_BASE_URL=http://localhost:8080 QC_ROLL_NUMBER=1 python -m pytest blackbox/tes
 | TC-097 | `test_coupon_apply_missing_or_wrong_type_returns_400[payload0]` | PASS |
 | TC-098 | `test_coupon_apply_missing_or_wrong_type_returns_400[payload1]` | PASS |
 
-### Checkout
+Merged additional Coupon case:
+- `test_coupon_apply_empty_code_returns_400`
+
+### Checkout (4)
 | TC | Pytest Test Case | Status |
 |---|---|---|
 | TC-040 | `test_checkout_empty_cart_returns_400` | FAIL |
 | TC-041 | `test_checkout_invalid_payment_method_returns_400` | PASS |
 
-### Wallet
+Merged additional Checkout cases:
+- `test_checkout_missing_or_wrong_payment_method_returns_400[payload0]`
+- `test_checkout_missing_or_wrong_payment_method_returns_400[payload1]`
+
+### Wallet (10)
 | TC | Pytest Test Case | Status |
 |---|---|---|
 | TC-042 | `test_wallet_add_invalid_amount_boundaries[0]` | PASS |
@@ -141,20 +200,36 @@ QC_BASE_URL=http://localhost:8080 QC_ROLL_NUMBER=1 python -m pytest blackbox/tes
 | TC-044 | `test_wallet_add_invalid_amount_boundaries[100001]` | PASS |
 | TC-045 | `test_wallet_pay_insufficient_balance_returns_400` | PASS |
 
-### Loyalty
+Merged additional Wallet cases:
+- `test_wallet_add_valid_min_boundary_returns_200`
+- `test_wallet_wrong_or_missing_amount_returns_400[/wallet/add-payload0]`
+- `test_wallet_wrong_or_missing_amount_returns_400[/wallet/pay-payload1]`
+- `test_wallet_wrong_or_missing_amount_returns_400[/wallet/pay-payload2]`
+- `test_wallet_add_upper_boundary_valid`
+- `test_wallet_pay_zero_amount_returns_400`
+
+### Loyalty (5)
 | TC | Pytest Test Case | Status |
 |---|---|---|
 | TC-046 | `test_loyalty_get_returns_200` | PASS |
 | TC-047 | `test_loyalty_redeem_invalid_points_returns_400[0]` | PASS |
 | TC-048 | `test_loyalty_redeem_invalid_points_returns_400[-1]` | PASS |
 
-### Orders
+Merged additional Loyalty cases:
+- `test_loyalty_redeem_wrong_type_returns_400`
+- `test_loyalty_redeem_more_than_available_points_returns_400` | FAIL
+
+### Orders (4)
 | TC | Pytest Test Case | Status |
 |---|---|---|
 | TC-049 | `test_orders_list_returns_200` | PASS |
 | TC-050 | `test_cancel_nonexistent_order_returns_404` | PASS |
 
-### Reviews
+Merged additional Order cases:
+- `test_get_nonexistent_order_returns_404`
+- `test_get_nonexistent_order_invoice_returns_404`
+
+### Reviews (8)
 | TC | Pytest Test Case | Status |
 |---|---|---|
 | TC-051 | `test_review_rating_outside_range_returns_400[0]` | FAIL |
@@ -162,7 +237,12 @@ QC_BASE_URL=http://localhost:8080 QC_ROLL_NUMBER=1 python -m pytest blackbox/tes
 | TC-053 | `test_review_comment_length_boundaries[]` | PASS |
 | TC-054 | `test_review_comment_length_boundaries[xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx]` | PASS |
 
-### Support Tickets
+Merged additional Review cases:
+- `test_review_missing_or_wrong_rating_returns_400[payload0]` | FAIL
+- `test_review_missing_or_wrong_rating_returns_400[payload1]`
+- `test_review_missing_comment_returns_400`
+
+### Support Tickets (13)
 | TC | Pytest Test Case | Status |
 |---|---|---|
 | TC-055 | `test_support_ticket_subject_boundary_invalid[1234]` | PASS |
@@ -172,6 +252,14 @@ QC_BASE_URL=http://localhost:8080 QC_ROLL_NUMBER=1 python -m pytest blackbox/tes
 | TC-059 | `test_support_tickets_list_returns_200` | PASS |
 | TC-099 | `test_support_ticket_wrong_types_return_400[payload0]` | PASS |
 | TC-100 | `test_support_ticket_wrong_types_return_400[payload1]` | PASS |
+
+Merged additional Support Ticket cases:
+- `test_support_ticket_missing_fields_returns_400[payload0]`
+- `test_support_ticket_missing_fields_returns_400[payload1]`
+- `test_support_ticket_create_valid_returns_success`
+- `test_support_ticket_update_nonexistent_returns_404`
+- `test_support_ticket_invalid_status_transition_open_to_closed_rejected`
+- `test_support_ticket_valid_status_lifecycle`
 
 ## Bug Detection (Failed Test Cases)
 
@@ -371,3 +459,79 @@ QC_BASE_URL=http://localhost:8080 QC_ROLL_NUMBER=1 python -m pytest blackbox/tes
 
 - Expected result (API doc): `400` because `product_id` is missing.
 - Actual result observed: `404 Not Found`.
+
+### Bug ID: BB-12
+- Endpoint tested: `/api/v1/addresses`
+- Request payload:
+  - Method: `POST`
+  - URL: `http://localhost:8080/api/v1/addresses`
+  - Headers: `X-Roll-Number: 1`, `X-User-ID: 1`
+  - Body: `{"label":"HOME","street":"12345 Main Street","city":"Hyderabad","pincode":"ABCDE1","is_default":false}`
+- Expected result: `400` for invalid pincode format.
+- Actual result observed: `200 OK`.
+
+### Bug ID: BB-13
+- Endpoint tested: `/api/v1/cart/remove`
+- Request payload:
+  - Method: `POST`
+  - URL: `http://localhost:8080/api/v1/cart/remove`
+  - Headers: `X-Roll-Number: 1`, `X-User-ID: 1`
+  - Body: `{}`
+- Expected result: `400` for missing `product_id`.
+- Actual result observed: `404 Not Found`.
+
+### Bug ID: BB-14
+- Endpoint tested: `/api/v1/products/{product_id}/reviews`
+- Request payload:
+  - Method: `POST`
+  - URL: `http://localhost:8080/api/v1/products/1/reviews`
+  - Headers: `X-Roll-Number: 1`, `X-User-ID: 1`
+  - Body: `{"comment":"good"}`
+- Expected result: `400` for missing `rating`.
+- Actual result observed: `200 OK`.
+
+### Bug ID: BB-15
+- Endpoint tested: `/api/v1/addresses/{address_id}`
+- Request payload:
+  - Method: `PUT`
+  - URL: `http://localhost:8080/api/v1/addresses/{address_id}`
+  - Headers: `X-Roll-Number: 1`, `X-User-ID: 1`
+  - Body examples: `{"label":"OFFICE","street":"Updated Street","is_default":false}`, `{"city":"Mumbai","street":"Updated Street","is_default":false}`, `{"pincode":"400001","street":"Updated Street","is_default":false}`
+- Expected result: `400` because `label`/`city`/`pincode` are restricted in update.
+- Actual result observed: `200 OK`.
+
+### Bug ID: BB-16
+- Endpoint tested: `/api/v1/addresses/{address_id}`
+- Request payload:
+  - Method: `PUT`
+  - URL: `http://localhost:8080/api/v1/addresses/{address_id}`
+  - Headers: `X-Roll-Number: 1`, `X-User-ID: 1`
+  - Body: `{"street":"1234","is_default":false}`
+- Expected result: `400` for street length below minimum.
+- Actual result observed: `200 OK`.
+
+### Bug ID: BB-17
+- Endpoint tested: `/api/v1/cart`
+- Validation: cart arithmetic consistency.
+- Expected result: `subtotal == quantity * price` for each item; total equals sum of subtotals.
+- Actual result observed: mismatched arithmetic (example observed: subtotal `-16` for quantity `2`, price `120`).
+
+### Bug ID: BB-18
+- Endpoint tested: `/api/v1/cart/update`
+- Request payload:
+  - Method: `POST`
+  - URL: `http://localhost:8080/api/v1/cart/update`
+  - Headers: `X-Roll-Number: 1`, `X-User-ID: 1`
+  - Body: `{"product_id":99999999,"quantity":2}`
+- Expected result: `404` for nonexistent cart product.
+- Actual result observed: `200 OK`.
+
+### Bug ID: BB-19
+- Endpoint tested: `/api/v1/loyalty/redeem`
+- Request payload:
+  - Method: `POST`
+  - URL: `http://localhost:8080/api/v1/loyalty/redeem`
+  - Headers: `X-Roll-Number: 1`, `X-User-ID: 1`
+  - Body: `{"points": current_points + 1}`
+- Expected result: `400` when redeeming more points than available.
+- Actual result observed: `200 OK`.
