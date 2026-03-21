@@ -11,18 +11,18 @@
 - Command used:
 
 ```bash
-QC_BASE_URL=http://localhost:8080 QC_ROLL_NUMBER=1 python -m pytest blackbox/tests/test_quickcart_api.py -vv
+QC_BASE_URL=http://localhost:8080 QC_ROLL_NUMBER=2024101103 python -m pytest blackbox/tests/test_quickcart_api.py -vv
 ```
 
 - Latest verification command:
 
 ```bash
-QC_BASE_URL=http://localhost:8080 QC_ROLL_NUMBER=1 /home/arnav-agnihotri/miniconda3/envs/autograder/bin/python -m pytest blackbox/tests/test_quickcart_api.py -q
+QC_BASE_URL=http://localhost:8080 QC_ROLL_NUMBER=2024101103 /home/arnav-agnihotri/miniconda3/envs/autograder/bin/python -m pytest blackbox/tests/test_quickcart_api.py -q
 ```
 
 - Total test cases: `141`
 - Passed: `120`
-- Failed: `21`
+- Failed: `20`
 - Skipped: `0`
 
 ## Category-Wise Distribution (Total = 141)
@@ -43,6 +43,26 @@ QC_BASE_URL=http://localhost:8080 QC_ROLL_NUMBER=1 /home/arnav-agnihotri/minicon
 | Reviews | 8 |
 | Support Tickets | 13 |
 | **Total** | **141** |
+
+## Non-Bug Test Case Matrix (Requested Structure)
+
+Note: This structure is applied to non-bug test design/status only. Bug case write-ups in `Bug Detection` are intentionally kept in the existing detailed format.
+
+| TC ID | Endpoint | Method | Input / Condition | Expected Result | Justification |
+|---|---|---|---|---|---|
+| TC-001 to TC-004, TC-060 to TC-063 | `/api/v1/profile` and header-protected user endpoints | `GET`, `PUT` | Missing/invalid `X-Roll-Number`, missing/invalid `X-User-ID` | `400/401` for invalid headers | Validates mandatory header enforcement and authentication input validation. |
+| TC-005 to TC-013, TC-064 to TC-070 | `/api/v1/admin/*` | `GET` | Admin listing/detail with required roll header | `200` with JSON payload | Confirms admin routes are reachable and response shape is stable. |
+| TC-014 to TC-019, TC-071 to TC-073 | `/api/v1/profile` | `GET`, `PUT` | Name/phone valid-invalid boundary, wrong types, missing fields | `200` for valid payloads, `400` for invalid payloads | Covers profile validation, boundary checks, and schema robustness. |
+| TC-020 to TC-026, TC-074 to TC-085 | `/api/v1/addresses`, `/api/v1/addresses/{id}` | `GET`, `POST`, `PUT`, `DELETE` | Create/update/delete flows, missing fields, wrong types, boundary inputs | `200/201` for valid operations, `400/404` for invalid/nonexistent cases | Ensures address lifecycle and validation rules are consistently enforced. |
+| TC-027 to TC-031, TC-086 to TC-089 | `/api/v1/products`, `/api/v1/products/{id}` | `GET` | Query filters, sort order, valid/invalid product access | `200` for valid queries, `404` for nonexistent resources | Verifies catalog discoverability and product retrieval correctness. |
+| TC-032 to TC-037, TC-090 to TC-096 | `/api/v1/cart/*` | `GET`, `POST`, `DELETE` | Add/update/remove/clear with missing fields, wrong types, invalid quantities | `200` on valid operations, `400/404` on invalid input/resource | Validates cart mutation behavior and request payload validation. |
+| TC-038 to TC-039, TC-097 to TC-098 | `/api/v1/coupon/*` | `POST`, `DELETE` | Missing/invalid coupon code and coupon removal edge conditions | `400` for invalid apply; success status for valid remove behavior | Checks coupon validation and graceful remove semantics. |
+| TC-040 to TC-041 + merged checkout cases | `/api/v1/checkout` | `POST` | Empty cart, invalid/missing payment method | `400` on invalid checkout inputs | Confirms checkout preconditions and payment validation behavior. |
+| TC-042 to TC-045 + merged wallet cases | `/api/v1/wallet/*` | `POST` | Amount boundaries, wrong types, missing fields, insufficient balance | `200` for valid amounts; `400` for invalid inputs/state | Tests wallet arithmetic constraints and debit/credit validation. |
+| TC-046 to TC-048 + merged loyalty cases | `/api/v1/loyalty`, `/api/v1/loyalty/redeem` | `GET`, `POST` | Invalid points, wrong types, over-redemption attempts | `200` on fetch, `400` on invalid redemption | Validates loyalty balance integrity and redemption safeguards. |
+| TC-049 to TC-050 + merged order cases | `/api/v1/orders/*` | `GET`, `POST` | List/fetch/cancel with nonexistent order IDs | `200` for valid list, `404` for nonexistent resources | Verifies order retrieval and cancellation error handling. |
+| TC-051 to TC-054 + merged review cases | `/api/v1/products/{id}/reviews` | `POST` | Rating range checks, missing rating/comment, boundary comment lengths | `200` for valid review, `400` for invalid payloads | Ensures review input validation and content constraints. |
+| TC-055 to TC-059, TC-099 to TC-100 + merged ticket cases | `/api/v1/support/*` | `GET`, `POST`, `PUT` | Subject/message boundaries, missing fields, type errors, lifecycle transitions | `200` for valid flows, `400/404` for invalid/nonexistent states | Covers support ticket schema validation and state transition correctness. |
 
 ## Complete Test Case Status (All 141, Category-Wise)
 
@@ -262,6 +282,9 @@ Merged additional Support Ticket cases:
 - `test_support_ticket_valid_status_lifecycle`
 
 ## Bug Detection (Failed Test Cases)
+
+- Note on counts: current run has `20` failed test instances but `19` bug IDs.
+- Reason: duplicate failures from `test_update_address_restricted_fields_rejected[...]` are consolidated under one root-cause bug (`BB-15`).
 
 ### Bug ID: BB-01
 - Endpoint tested: `/api/v1/profile`
@@ -499,6 +522,10 @@ Merged additional Support Ticket cases:
   - Body examples: `{"label":"OFFICE","street":"Updated Street","is_default":false}`, `{"city":"Mumbai","street":"Updated Street","is_default":false}`, `{"pincode":"400001","street":"Updated Street","is_default":false}`
 - Expected result: `400` because `label`/`city`/`pincode` are restricted in update.
 - Actual result observed: `200 OK`.
+- Consolidation note: this single bug entry represents three failing parametrized cases:
+  - `test_update_address_restricted_fields_rejected[payload0]`
+  - `test_update_address_restricted_fields_rejected[payload1]`
+  - `test_update_address_restricted_fields_rejected[payload2]`
 
 ### Bug ID: BB-16
 - Endpoint tested: `/api/v1/addresses/{address_id}`
